@@ -1,5 +1,6 @@
 from sklearn.utils import murmurhash3_32
 import random
+import tensorflow as tf
 
 
 def hashfunc(m):
