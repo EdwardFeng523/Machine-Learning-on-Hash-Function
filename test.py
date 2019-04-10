@@ -38,7 +38,7 @@ def generateBatchData(x, y):
     return (x_train, y_train)
 
 def h(x):
-    return ((37 * x + 127) % 2038072819) % TABLE_SIZE
+    return ((37 * x + 47) % 2038072819) % TABLE_SIZE
 
 table = [0 for i in range(TABLE_SIZE)]
 
@@ -58,7 +58,7 @@ def load_table(percentage):
         item = random.randrange(0, TABLE_SIZE * 5)
         insert(item)
 
-load_table(0.55)
+load_table(0.65)
 
 
 def generate_random_data():
@@ -95,7 +95,7 @@ print y_train
 print x_test
 print y_test
 
-
+## Tuning the training data to be balanced
 
 # a sequence of numbers representing the items to test the cache
 inputX = tf.placeholder(tf.float32, [batchSize, 1])
