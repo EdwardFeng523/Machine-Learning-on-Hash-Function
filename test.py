@@ -53,6 +53,12 @@ def load_table(percentage):
 load_table(0.65)
 
 
+# cnt = 0
+# for i in range(TABLE_SIZE):
+#     if table[i] == 1:
+#         cnt += 1
+# print "total 1", cnt
+
 def generate_random_data():
     x_set = set([])
     x = []
@@ -90,43 +96,50 @@ def generate_random_data():
 
 ## Tuning the training data to be balanced
 
-# a sequence of numbers representing the items to test the cache
-inputX = tf.placeholder(tf.float32, [batchSize,])
+with tf.name_scope('input_X'):
+    # a sequence of numbers representing the items to test the cache
+    inputX = tf.placeholder(tf.float32, [batchSize,])
 
-# inputy is a sequence of zeroes and ones
-inputY = tf.placeholder(tf.float32, [batchSize,])
+with tf.name_scope('input_labels'):
+    # inputy is a sequence of zeroes and ones
+    inputY = tf.placeholder(tf.int32, [batchSize,])
 
-inputZ = tf.Variable(np.zeros((batchSize,)), dtype=tf.int32)
-# inputY = tf.reshape(inputY, [100])
+with tf.name_scope('hidden_weights'):
+    # the weight matrix that maps the inputs to hiddden layer
+    W = tf.Variable(np.random.normal(0, 0.05, (1, hiddenUnits)), dtype=tf.float32)
+with tf.name_scope('hidden_biases'):
+    # biaes for the hidden values
+    b = tf.Variable(np.zeros((1, hiddenUnits)), dtype=tf.float32)
 
-# the weight matrix that maps the inputs to hiddden layer
-W = tf.Variable(np.random.normal(0, 0.05, (1, hiddenUnits)), dtype=tf.float32)
-# biaes for the hidden values
-b = tf.Variable(np.zeros((1, hiddenUnits)), dtype=tf.float32)
-
-# weights and bias for the final classification
-W2 = tf.Variable(np.random.normal (0, 0.05, (hiddenUnits, numClasses)), dtype=tf.float32)
-b2 = tf.Variable(np.zeros((1,numClasses)), dtype=tf.float32)
+with tf.name_scope('final_weights'):
+    # weights and bias for the final classification
+    W2 = tf.Variable(np.random.normal (0, 0.05, (hiddenUnits, numClasses)), dtype=tf.float32)
+with tf.name_scope('final_biases'):
+    b2 = tf.Variable(np.zeros((1,numClasses)), dtype=tf.float32)
 
 hiddenLayer = tf.tanh(tf.matmul(tf.reshape(inputX, [100, 1]), W) + b)
 outputs = tf.matmul(hiddenLayer, W2) + b2
 
 predictions = tf.nn.softmax(outputs)
 
-print inputY.shape
-
 # compute the loss
-losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=outputs, labels=inputZ)
-totalLoss = tf.reduce_mean(losses)
+with tf.name_scope('x_entropy'):
+    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=outputs, labels=inputY)
+with tf.name_scope('total_loss'):
+    totalLoss = tf.reduce_mean(losses)
+tf.summary.scalar('loss', totalLoss)
+
 
 # use gradient descent to train
 # trainingAlg = tf.train.GradientDescentOptimizer(0.02).minimize(totalLoss)
-trainingAlg = tf.train.AdagradOptimizer(0.001).minimize(totalLoss)
+trainingAlg = tf.train.AdagradOptimizer(0.1).minimize(totalLoss)
+merged = tf.summary.merge_all()
 
 # and train!!
 with tf.Session() as sess:
     #
     # initialize everything
+    train_writer = tf.summary.FileWriter('./logs/train', sess.graph)
     x_train, y_train, x_test, y_test = generate_random_data()
     sess.run(tf.global_variables_initializer())
     #
@@ -138,18 +151,16 @@ with tf.Session() as sess:
         #
         # get some data
         x, y = generateBatchData(x_train, y_train)
-        # y = np.array(y).reshape(100,1)
-        print "yshape", y.shape
-        print "xshape", x.shape
-        print "here"
+        #
         #
         # do the training epoch
-        _totalLoss, _trainingAlg, _predictions, _outputs = sess.run(
-            [totalLoss, trainingAlg, predictions, outputs],
+        _merged, _totalLoss, _trainingAlg, _predictions, _outputs = sess.run(
+            [merged, totalLoss, trainingAlg, predictions, outputs],
             feed_dict={
                 inputX: x,
                 inputY: y
             })
+        train_writer.add_summary(_merged, epoch)
         # just FYI, compute the number of correct predictions
         numCorrect = 0
         for i in range(len(y)):
@@ -194,5 +205,5 @@ with tf.Session() as sess:
     final_loss = tf.reduce_mean(res_losses)
     _resLoss = sess.run(final_loss)
     print(
-    "Loss for 3000 randomly chosen documents is " + str(_resLoss) + ", number of correct labels is " + str(numCorrect),
+    "Loss for test set is " + str(_resLoss) + ", number of correct labels is " + str(numCorrect),
     "out of", len(x_test))
