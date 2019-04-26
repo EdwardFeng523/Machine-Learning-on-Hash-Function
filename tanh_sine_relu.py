@@ -128,11 +128,11 @@ with tf.name_scope('final_weights'):
 with tf.name_scope('final_biases'):
     b4 = tf.Variable(np.zeros((1,numClasses)), dtype=tf.float32)
 
-hiddenLayer = (tf.matmul(tf.reshape(inputX, [100, 1]), W) + b)
+hiddenLayer = tf.tanh(tf.matmul(tf.reshape(inputX, [100, 1]), W) + b)
 
-hiddenLayer2 = tf.tanh(tf.matmul(hiddenLayer, W2) + b2)
+hiddenLayer2 = tf.math.sin(tf.matmul(hiddenLayer, W2) + b2)
 
-hiddenLayer3 = tf.math.sin(tf.matmul(hiddenLayer2, W3) + b3)
+hiddenLayer3 = tf.nn.relu(tf.matmul(hiddenLayer2, W3) + b3)
 
 outputs = tf.matmul(hiddenLayer3, W4) + b4
 
@@ -155,7 +155,7 @@ merged = tf.summary.merge_all()
 with tf.Session() as sess:
     #
     # initialize everything
-    train_writer = tf.summary.FileWriter('./logs_plain_tanh_sine/', sess.graph)
+    train_writer = tf.summary.FileWriter('./logs_tanh_relu_sine/', sess.graph)
     x_train, y_train, x_test, y_test = generate_random_data()
     sess.run(tf.global_variables_initializer())
     #

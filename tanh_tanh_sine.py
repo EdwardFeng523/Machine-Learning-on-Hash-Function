@@ -130,9 +130,9 @@ with tf.name_scope('final_biases'):
 
 hiddenLayer = tf.tanh(tf.matmul(tf.reshape(inputX, [100, 1]), W) + b)
 
-hiddenLayer2 = tf.tanh(tf.matmul(hiddenLayer, W2) + b2)
+hiddenLayer2 = tf.math.sin(tf.matmul(hiddenLayer, W2) + b2)
 
-hiddenLayer3 = tf.math.sin(tf.matmul(hiddenLayer2, W3) + b3)
+hiddenLayer3 = tf.nn.relu(tf.matmul(hiddenLayer2, W3) + b3)
 
 outputs = tf.matmul(hiddenLayer3, W4) + b4
 
