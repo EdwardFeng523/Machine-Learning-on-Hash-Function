@@ -8,9 +8,10 @@ numClasses = 2
 
 hiddenUnits = 50
 
-numTrainingIters = 15000
+numTrainingIters = 20000
 
-TABLE_SIZE = 2500
+TABLE_SIZE = 10000
+
 
 
 def generateBatchData(x, y):
@@ -28,18 +29,15 @@ def generateBatchData(x, y):
     # return the pair
     return (x_train, y_train)
 
-
 def h(x):
-    return ((37 * x + 47) % 2038072819) % TABLE_SIZE
-
+    # return ((37 * x + 47) % 2038072819) % TABLE_SIZE
+    return (37 * x + 47)% TABLE_SIZE
 
 table = [0 for i in range(TABLE_SIZE)]
-
 
 def insert(x):
     idx = h(x)
     table[idx] = 1
-
 
 def test(x):
     idx = h(x)
@@ -48,12 +46,10 @@ def test(x):
     else:
         return False
 
-
 def load_table(percentage):
     for i in range(int(TABLE_SIZE * percentage)):
         item = random.randrange(0, TABLE_SIZE * 5)
         insert(item)
-
 
 load_table(0.65)
 
@@ -91,6 +87,9 @@ def generate_random_data():
     return x_train, y_train, x_test, y_test
 
 
+
+
+
 # print x_train
 # print y_train
 # print x_test
@@ -100,27 +99,39 @@ def generate_random_data():
 
 with tf.name_scope('input_X'):
     # a sequence of numbers representing the items to test the cache
-    inputX = tf.placeholder(tf.float32, [batchSize, ])
+    inputX = tf.placeholder(tf.float32, [batchSize,])
 
 with tf.name_scope('input_labels'):
     # inputy is a sequence of zeroes and ones
-    inputY = tf.placeholder(tf.int32, [batchSize, ])
+    inputY = tf.placeholder(tf.int32, [batchSize,])
 
 with tf.name_scope('hidden_weights'):
     # the weight matrix that maps the inputs to hiddden layer
     W = tf.Variable(np.random.normal(0, 0.05, (1, hiddenUnits)), dtype=tf.float32)
-with tf.name_scope('hidden_biases'):
+
+with tf.name_scope('hidden_weights_2'):
+    # the weight matrix that maps the inputs to hiddden layer
+    W2 = tf.Variable(np.random.normal(0, 0.05, (hiddenUnits, hiddenUnits)), dtype=tf.float32)
+
+with tf.name_scope('hidden_biases_2'):
     # biaes for the hidden values
     b = tf.Variable(np.zeros((1, hiddenUnits)), dtype=tf.float32)
 
+with tf.name_scope('hidden_biases'):
+    # biaes for the hidden values
+    b2 = tf.Variable(np.zeros((1, hiddenUnits)), dtype=tf.float32)
+
 with tf.name_scope('final_weights'):
     # weights and bias for the final classification
-    W2 = tf.Variable(np.random.normal(0, 0.05, (hiddenUnits, numClasses)), dtype=tf.float32)
+    W3 = tf.Variable(np.random.normal (0, 0.05, (hiddenUnits, numClasses)), dtype=tf.float32)
 with tf.name_scope('final_biases'):
-    b2 = tf.Variable(np.zeros((1, numClasses)), dtype=tf.float32)
+    b3 = tf.Variable(np.zeros((1,numClasses)), dtype=tf.float32)
 
 hiddenLayer = tf.tanh(tf.matmul(tf.reshape(inputX, [100, 1]), W) + b)
-outputs = tf.matmul(hiddenLayer, W2) + b2
+
+hiddenLayer2 = tf.math.sin(tf.matmul(hiddenLayer, W2) + b2)
+
+outputs = tf.matmul(hiddenLayer2, W3) + b3
 
 predictions = tf.nn.softmax(outputs)
 
@@ -131,6 +142,7 @@ with tf.name_scope('total_loss'):
     totalLoss = tf.reduce_mean(losses)
 tf.summary.scalar('loss', totalLoss)
 
+
 # use gradient descent to train
 # trainingAlg = tf.train.GradientDescentOptimizer(0.02).minimize(totalLoss)
 trainingAlg = tf.train.AdagradOptimizer(0.1).minimize(totalLoss)
@@ -140,7 +152,7 @@ merged = tf.summary.merge_all()
 with tf.Session() as sess:
     #
     # initialize everything
-    train_writer = tf.summary.FileWriter('./logs', sess.graph)
+    train_writer = tf.summary.FileWriter('./logs_tanh_sine/', sess.graph)
     x_train, y_train, x_test, y_test = generate_random_data()
     sess.run(tf.global_variables_initializer())
     #
@@ -206,5 +218,5 @@ with tf.Session() as sess:
     final_loss = tf.reduce_mean(res_losses)
     _resLoss = sess.run(final_loss)
     print(
-        "Loss for test set is " + str(_resLoss) + ", number of correct labels is " + str(numCorrect),
-        "out of", len(x_test))
+    "Loss for test set is " + str(_resLoss) + ", number of correct labels is " + str(numCorrect),
+    "out of", len(x_test))
